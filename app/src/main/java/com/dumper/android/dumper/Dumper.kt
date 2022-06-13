@@ -1,9 +1,7 @@
 package com.dumper.android.dumper
 
-import android.util.Log
 import androidx.core.text.isDigitsOnly
 import com.dumper.android.utils.DEFAULT_DIR
-import com.dumper.android.utils.TAG
 import com.dumper.android.utils.toHex
 import com.dumper.android.utils.toMB
 import java.io.File
@@ -24,11 +22,7 @@ class Dumper(private val pkg: String) {
     fun dumpFile(autoFix: Boolean): String {
         val log = StringBuilder()
         try {
-            mem.pid = getProcessID()
-            if (mem.pid == 0) {
-                log.append("[ERROR] Failed to get process ID\n")
-                return log.toString()
-            }
+            mem.pid = getProcessID() ?: throw Exception("Process not found!\ndid you already run it?")
 
             val map = parseMap()
             map.forEach {
@@ -38,8 +32,8 @@ class Dumper(private val pkg: String) {
                 }
             }
 
-            mem.sAddress = map[0]
-            mem.eAddress = map[1]
+            mem.sAddress = map.first()
+            mem.eAddress = map.last()
             mem.size = mem.eAddress - mem.sAddress
 
             log.appendLine("PID : ${mem.pid}")
@@ -99,36 +93,32 @@ class Dumper(private val pkg: String) {
      *
      * @throws FileNotFoundException if required file is not found in memory map
      */
-    private fun parseMap(): List<Long> {
-        val output = mutableListOf<Long>(0, 0)
+    private fun parseMap(): LongArray {
         val files = File("/proc/${mem.pid}/maps")
         if (files.exists()) {
             val lines = files.readLines()
 
             val lineStart = lines.find {
-
                 val map = MapLinux(it)
                 if (file.contains(".dat"))
                     map.getPath().contains(file)
                 else {
                     map.getPerms().contains("r-xp") && map.getPath().contains(file)
                 }
-            } ?: throw FileNotFoundException("Unable find baseAddress of $file")
+            } ?: throw Exception("Unable find baseAddress of $file")
 
             val mapStart = MapLinux(lineStart)
 
             val lineEnd = lines.findLast {
                 val map = MapLinux(it)
                 mapStart.getInode() == map.getInode()
-            } ?: throw FileNotFoundException("Unable find endAddress of $file")
+            } ?: throw Exception("Unable find endAddress of $file")
 
             val mapEnd = MapLinux(lineEnd)
-            output[0] = mapStart.getStartAddress()
-            output[1] = mapEnd.getEndAddress()
+            return longArrayOf(mapStart.getStartAddress(), mapEnd.getEndAddress())
         } else {
-            throw FileNotFoundException("Failed To Open : ${files.path}")
+            throw Exception("Failed To Open : ${files.path}")
         }
-        return output
     }
 
     /**
@@ -137,12 +127,12 @@ class Dumper(private val pkg: String) {
      * @throws Exception if dir "/proc" is empty
      * @throws FileNotFoundException if "/proc" failed to open
      */
-    private fun getProcessID(): Int {
+    private fun getProcessID(): Int? {
         val proc = File("/proc")
         if (proc.exists()) {
             val dPID = proc.listFiles()
             if (dPID.isNullOrEmpty()) {
-                throw Exception("Failed To Open : ${proc.path}")
+                throw Exception("Unable to get process list id")
             }
             for (line in dPID) {
                 if (line.name.isDigitsOnly()) {
@@ -158,7 +148,7 @@ class Dumper(private val pkg: String) {
         } else {
             throw FileNotFoundException("Failed To Open : ${proc.path}")
         }
-        return 0
+        return null
     }
 }
 

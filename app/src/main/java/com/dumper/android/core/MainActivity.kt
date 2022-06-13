@@ -7,7 +7,6 @@ import android.os.*
 import android.view.Menu
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.commit
 import com.dumper.android.R
 import com.dumper.android.core.RootServices.Companion.IS_FIX_NAME
@@ -23,13 +22,12 @@ import com.dumper.android.messager.MSGReceiver
 import com.dumper.android.ui.ConsoleFragment
 import com.dumper.android.ui.MemoryFragment
 import com.dumper.android.ui.viewmodel.ConsoleViewModel
+import com.dumper.android.ui.viewmodel.MainViewModel
 import com.topjohnwu.superuser.ipc.RootService
 
 class MainActivity : AppCompatActivity() {
     private lateinit var mainBind: ActivityMainBinding
-    var remoteMessenger: Messenger? = null
-    private val myMessenger = Messenger(Handler(Looper.getMainLooper(), MSGReceiver(this)))
-    private val conn = MSGConnection(this)
+    val mainVm: MainViewModel by viewModels()
     val console: ConsoleViewModel by viewModels()
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -41,16 +39,19 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mainBind = ActivityMainBinding.inflate(layoutInflater)
+        initService()
 
         with(mainBind) {
             setContentView(root)
             setSupportActionBar(toolbar)
 
-            supportFragmentManager.commit {
-                replace(R.id.contentContainer, MemoryFragment.instance)
+            if (savedInstanceState == null) {
+                supportFragmentManager
+                    .beginTransaction()
+                    .add(R.id.contentContainer, MemoryFragment.instance)
+                    .commit()
             }
 
-            initService()
 
             bottomBar.setOnItemSelectedListener {
                 supportFragmentManager.commit {
@@ -66,7 +67,7 @@ class MainActivity : AppCompatActivity() {
                             R.id.action_memory -> MemoryFragment.instance
                             R.id.action_console -> ConsoleFragment.instance
                             else -> throw IllegalArgumentException("Unknown item selected")
-                        }
+                        }, null
                     )
                 }
                 true
@@ -88,16 +89,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun initService() {
         Fixer.extractLibs(this)
-        if (remoteMessenger == null) {
+        if (mainVm.remoteMessenger == null) {
+            mainVm.dumperConnection = MSGConnection(this)
             val intent = Intent(this, RootServices::class.java)
-            RootService.bind(intent, conn)
+            RootService.bind(intent, mainVm.dumperConnection)
+            mainVm.receiver = Messenger(Looper.myLooper()?.let { Handler(it, MSGReceiver(this)) })
         }
     }
 
     fun sendRequestAllProcess() {
         val message = Message.obtain(null, MSG_GET_PROCESS_LIST)
-        message.replyTo = myMessenger
-        remoteMessenger?.send(message)
+        message.replyTo = mainVm.receiver
+        mainVm.remoteMessenger?.send(message)
     }
 
     fun sendRequestDump(process: String, dump_file: Array<String>, autoFix: Boolean) {
@@ -112,12 +115,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        message.replyTo = myMessenger
-        remoteMessenger?.send(message)
+        message.replyTo = mainVm.receiver
+        mainVm.remoteMessenger?.send(message)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        RootService.unbind(conn)
+        RootService.unbind(mainVm.dumperConnection)
     }
 }
