@@ -43,9 +43,18 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/libil2cpp"
-                android:hint="@string/elf_name" />
+                android:hint="@string/elf_name"
+                android:text="@string/libil2cpp" />
         </com.google.android.material.textfield.TextInputLayout>
+
+        <CheckBox
+            android:id="@+id/flagCheck"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/check_flag_address"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/libName" />
 
         <CheckBox
             android:id="@+id/autoFix"
@@ -55,8 +64,7 @@
             android:layout_marginTop="6dp"
             android:minHeight="48dp"
             android:text="@string/fix_elf_result"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/libName" />
+            app:layout_constraintTop_toBottomOf="@+id/flagCheck" />
 
         <CheckBox
             android:id="@+id/metadata"
@@ -64,6 +72,7 @@
             android:layout_height="wrap_content"
             android:text="@string/dump_global_metadata_dat"
             app:layout_constraintTop_toBottomOf="@+id/autoFix" />
+
 
         <Button
             android:id="@+id/dumpButton"

@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import com.dumper.android.R
 import com.dumper.android.core.RootServices.Companion.IS_FIX_NAME
+import com.dumper.android.core.RootServices.Companion.IS_FLAG_CHECK
 import com.dumper.android.core.RootServices.Companion.LIBRARY_DIR_NAME
 import com.dumper.android.core.RootServices.Companion.LIST_FILE
 import com.dumper.android.core.RootServices.Companion.MSG_DUMP_PROCESS
@@ -103,12 +104,13 @@ class MainActivity : AppCompatActivity() {
         mainVm.remoteMessenger?.send(message)
     }
 
-    fun sendRequestDump(process: String, dump_file: Array<String>, autoFix: Boolean) {
+    fun sendRequestDump(process: String, dump_file: Array<String>, autoFix: Boolean, flagCheck: Boolean) {
         val message = Message.obtain(null, MSG_DUMP_PROCESS)
 
         message.data.apply {
             putString(PROCESS_NAME, process)
             putStringArray(LIST_FILE, dump_file)
+            putBoolean(IS_FLAG_CHECK, flagCheck)
             if (autoFix) {
                 putBoolean(IS_FIX_NAME, true)
                 putString(LIBRARY_DIR_NAME, "${filesDir.path}/SoFixer")

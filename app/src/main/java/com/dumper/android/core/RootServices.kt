@@ -33,12 +33,13 @@ class RootServices : RootService(), Handler.Callback {
                 val logOutput = StringBuilder()
                 val process = requestData.getString(PROCESS_NAME)
                 val listFile = requestData.getStringArray(LIST_FILE)
+                val isFlagCheck = requestData.getBoolean(IS_FLAG_CHECK)
                 val isAutoFix = requestData.getBoolean(IS_FIX_NAME, false)
                 if (process != null && listFile != null) {
                     val dumper = Dumper(process)
                     for (file in listFile) {
                         dumper.file = file
-                        logOutput.appendLine(dumper.dumpFile(isAutoFix))
+                        logOutput.appendLine(dumper.dumpFile(isAutoFix, isFlagCheck))
                     }
                     data.putString(DUMP_LOG, logOutput.toString())
                 } else {
@@ -67,10 +68,11 @@ class RootServices : RootService(), Handler.Callback {
         const val MSG_DUMP_PROCESS = 1
         const val MSG_GET_PROCESS_LIST = 2
         const val DUMP_LOG = "DUMP_LOG"
+        const val LIBRARY_DIR_NAME = "NATIVE_DIR"
         const val LIST_ALL_PROCESS = "LIST_ALL_PROCESS"
         const val PROCESS_NAME = "PROCESS"
         const val LIST_FILE = "LIST_FILE"
+        const val IS_FLAG_CHECK = "IS_FLAG_CHECK"
         const val IS_FIX_NAME = "FIX_ELF"
-        const val LIBRARY_DIR_NAME = "NATIVE_DIR"
     }
 }

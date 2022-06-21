@@ -17,14 +17,19 @@ class Dumper(private val pkg: String) {
      * Dump the memory to a file
      *
      * @param autoFix if `true` the dumped file will be fixed after dumping
+     * @param flagCheck if `true` the dumped file will be checked for flags/
      * @return log of the dump
      */
-    fun dumpFile(autoFix: Boolean): String {
+    fun dumpFile(autoFix: Boolean, flagCheck: Boolean): String {
         val log = StringBuilder()
         try {
             mem.pid = getProcessID() ?: throw Exception("Process not found!\ndid you already run it?")
 
-            val map = parseMap()
+            log.appendLine("PID : ${mem.pid}")
+            log.appendLine("FILE : $file")
+            log.appendLine("[INFO] Flag Check is : ${if (flagCheck) "Enabled" else "Disabled"}")
+
+            val map = parseMap(flagCheck)
             map.forEach {
                 if (it == 0L) {
                     log.append("[ERROR] Failed to get memory map of $pkg\n")
@@ -36,8 +41,6 @@ class Dumper(private val pkg: String) {
             mem.eAddress = map.last()
             mem.size = mem.eAddress - mem.sAddress
 
-            log.appendLine("PID : ${mem.pid}")
-            log.appendLine("FILE : $file")
             log.appendLine("Start Address : ${mem.sAddress.toHex()}")
             log.appendLine("End Address : ${mem.eAddress.toHex()}")
             log.appendLine("Size Memory : ${mem.size.toHex()}")
@@ -93,17 +96,21 @@ class Dumper(private val pkg: String) {
      *
      * @throws FileNotFoundException if required file is not found in memory map
      */
-    private fun parseMap(): LongArray {
+    private fun parseMap(checkFlag: Boolean): LongArray {
         val files = File("/proc/${mem.pid}/maps")
         if (files.exists()) {
             val lines = files.readLines()
 
             val lineStart = lines.find {
                 val map = MapLinux(it)
-                if (file.contains(".dat"))
-                    map.getPath().contains(file)
-                else {
-                    map.getPerms().contains("r-xp") && map.getPath().contains(file)
+                if (file.contains(".dat")) {
+                     map.getPath().contains(file)
+                } else {
+                    if (checkFlag)
+                        map.getPerms().contains("r-xp") && map.getPath().contains(file)
+                    else {
+                        map.getPath().contains(file)
+                    }
                 }
             } ?: throw Exception("Unable find baseAddress of $file")
 

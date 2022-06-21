@@ -10,4 +10,5 @@
     <string name="libil2cpp">libil2cpp.so</string>
     <string name="memory">Memory</string>
     <string name="console">Console</string>
+    <string name="check_flag_address">Check flag address</string>
 </resources>

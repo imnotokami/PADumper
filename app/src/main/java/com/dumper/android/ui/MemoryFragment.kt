@@ -52,7 +52,8 @@ class MemoryFragment : Fragment() {
                     getMainActivity().sendRequestDump(
                         process,
                         listDump.toTypedArray(),
-                        autoFix.isChecked
+                        autoFix.isChecked,
+                        flagCheck.isChecked
                     )
                 } else {
                     consoles.appendError("Process name is empty")
