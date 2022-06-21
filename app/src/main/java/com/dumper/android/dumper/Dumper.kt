@@ -27,7 +27,6 @@ class Dumper(private val pkg: String) {
 
             log.appendLine("PID : ${mem.pid}")
             log.appendLine("FILE : $file")
-            log.appendLine("[INFO] Flag Check is : ${if (flagCheck) "Enabled" else "Disabled"}")
 
             val map = parseMap(flagCheck)
             map.forEach {
